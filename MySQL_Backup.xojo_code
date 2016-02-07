@@ -7,8 +7,8 @@ Protected Class MySQL_Backup
 		  
 		  dim nowD as Date = Date.now
 		  
-		  Dim f As FolderItem
-		  f = SpecialFolder.Documents.Child("backup" + me.mDatabase.DatabaseName.ToText + ".sql")//"-" + nowD.ToText + ".sql")
+		  Dim f As FolderItem  // TODO : prompt the user with a save as dialog
+		  f = SpecialFolder.Documents.Child("backup" + me.mDatabase.DatabaseName.ToText + "-" + nowD.ToText + ".sql")
 		  
 		  dim rc as RecordSet = me.mDatabase.TableSchema
 		  
@@ -25,7 +25,7 @@ Protected Class MySQL_Backup
 		    output.WriteLine("-- Generation Time: " + nowD.ToText )
 		    
 		    output.WriteLine("SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';")
-		    output.WriteLine("SET time_zone = '+00:00';")
+		    output.WriteLine("SET time_zone = '+00:00';")  // TODO : find a way to detect the timezone ?
 		    output.WriteLine("")
 		    output.WriteLine("")
 		    
