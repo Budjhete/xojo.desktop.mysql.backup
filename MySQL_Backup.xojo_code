@@ -6,16 +6,25 @@ Protected Class MySQL_Backup
 		  Using Xojo.IO
 		  
 		  dim nowD as Date = Date.now
+		  BackupNow(SpecialFolder.Documents)
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub BackupNow(fi as xojo.io.FolderItem)
+		  Using Xojo.Core
+		  Using Xojo.IO
 		  
-		  Dim f As FolderItem  // TODO : prompt the user with a save as dialog
-		  f = SpecialFolder.Documents.Child("backup" + me.mDatabase.DatabaseName.ToText + "-" + nowD.ToText + ".sql")
+		  dim nowD as Date = Date.now
+		  
+		  fi = fi.Child("backup-" + me.mDatabase.DatabaseName.ToText + "-" + nowD.ToText(Locale.Current, Date.FormatStyles.Short, Date.FormatStyles.none) + ".sql")
 		  
 		  dim rc as RecordSet = me.mDatabase.TableSchema
 		  
 		  
 		  Dim output As TextOutputStream
 		  Try
-		    output = TextOutputStream.Create(f, TextEncoding.UTF8)
+		    output = TextOutputStream.Create(fi, TextEncoding.UTF8)
 		    
 		    output.WriteLine("-- Xojo Desktop MySQL backup")
 		    output.WriteLine("-- version 0.0.1")
@@ -23,6 +32,7 @@ Protected Class MySQL_Backup
 		    output.WriteLine("--")
 		    output.WriteLine("-- Host: " + me.mDatabase.Host.ToText + ":" + me.mDatabase.DatabaseName.ToText )
 		    output.WriteLine("-- Generation Time: " + nowD.ToText )
+		    output.WriteLine("-- File Name: " + mFileName )
 		    
 		    output.WriteLine("SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';")
 		    output.WriteLine("SET time_zone = '+00:00';")  // TODO : find a way to detect the timezone ?
@@ -165,7 +175,6 @@ Protected Class MySQL_Backup
 		    
 		    output.Close
 		    
-		    
 		  Catch e As IOException
 		    System.DebugLog "Unable to append to file."
 		  End Try
@@ -296,6 +305,10 @@ Protected Class MySQL_Backup
 
 	#tag Property, Flags = &h0
 		mDatabase As Database
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		mFileName As Text = "Untitle"
 	#tag EndProperty
 
 
