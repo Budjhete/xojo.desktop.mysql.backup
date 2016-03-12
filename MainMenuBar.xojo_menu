@@ -6,6 +6,16 @@ Begin Menu MainMenuBar
       Index = -2147483648
       AutoEnable = True
       Visible = True
+      Begin MenuItem FileClose
+         SpecialMenu = 0
+         Text = "Close"
+         Index = -2147483648
+         ShortcutKey = "W"
+         Shortcut = "Cmd+W"
+         MenuModifier = True
+         AutoEnable = True
+         Visible = True
+      End
       Begin QuitMenuItem FileQuit
          SpecialMenu = 0
          Text = "#App.kFileQuit"
