@@ -5,7 +5,6 @@ Protected Class MySQL_Backup
 		  Using Xojo.Core
 		  Using Xojo.IO
 		  
-		  dim nowD as Date = Date.now
 		  BackupNow(SpecialFolder.Documents)
 		End Sub
 	#tag EndMethod
@@ -331,6 +330,12 @@ Protected Class MySQL_Backup
 			Name="mDatabase"
 			Group="Behavior"
 			Type="Database"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="mFileName"
+			Group="Behavior"
+			InitialValue="Untitle"
+			Type="Text"
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
