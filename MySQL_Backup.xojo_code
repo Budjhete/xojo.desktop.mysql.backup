@@ -16,7 +16,9 @@ Protected Class MySQL_Backup
 		  
 		  dim nowD as Date = Date.now
 		  
-		  fi = fi.Child("backup-" + me.mDatabase.DatabaseName.ToText + "-" + nowD.ToText(Locale.Current, Date.FormatStyles.Short, Date.FormatStyles.none) + ".sql")
+		  dim sNowD as text = nowD.ToText().ReplaceAll(":", "")
+		  
+		  fi = fi.Child("backup-" + me.mDatabase.DatabaseName.ToText + "-" + sNowD + ".sql")
 		  
 		  dim rc as RecordSet = me.mDatabase.TableSchema
 		  
