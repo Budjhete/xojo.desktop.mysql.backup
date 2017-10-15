@@ -209,7 +209,7 @@ End
 		    Wend
 		    
 		  catch er as NilObjectException
-		    MsgBox "no shit sherlock"
+		    MsgBox "nil object"
 		  End Try
 		End Sub
 	#tag EndEvent
