@@ -5,12 +5,12 @@ Protected Class MySQL_Backup
 		  Using Xojo.Core
 		  Using Xojo.IO
 		  
-		  BackupNow(SpecialFolder.Documents)
+		  call BackupNow(SpecialFolder.Temporary)
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub BackupNow(fi as xojo.io.FolderItem)
+		Function BackupNow(fi as xojo.io.FolderItem, pWithDate as Boolean = true) As Xojo.IO.FolderItem
 		  Using Xojo.Core
 		  Using Xojo.IO
 		  
@@ -18,7 +18,10 @@ Protected Class MySQL_Backup
 		  
 		  dim sNowD as text = nowD.ToText().ReplaceAll(":", "")
 		  
-		  fi = fi.Child("backup-" + me.mDatabase.DatabaseName.ToText + "-" + sNowD + ".sql")
+		  dim filename as text = "backup-" + me.mDatabase.DatabaseName.ToText
+		  
+		  if pWithDate then filename = filename + "-" + sNowD
+		  fi = fi.Child( filename + ".sql")
 		  
 		  dim rc as RecordSet = me.mDatabase.TableSchema
 		  
@@ -175,12 +178,13 @@ Protected Class MySQL_Backup
 		    wend
 		    
 		    output.Close
-		    
+		    Return fi
 		  Catch e As IOException
 		    System.DebugLog "Unable to append to file."
+		    Return nil
 		  End Try
 		  
-		End Sub
+		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
