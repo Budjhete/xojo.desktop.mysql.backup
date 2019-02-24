@@ -62,6 +62,7 @@ Begin Window WindowMainBackupMySQL
       ScrollbarHorizontal=   False
       ScrollBarVertical=   True
       SelectionType   =   0
+      ShowDropIndicator=   False
       TabIndex        =   0
       TabPanelIndex   =   0
       TabStop         =   True
@@ -69,6 +70,7 @@ Begin Window WindowMainBackupMySQL
       TextSize        =   0.0
       TextUnit        =   0
       Top             =   64
+      Transparent     =   False
       Underline       =   False
       UseFocusRing    =   True
       Visible         =   True
@@ -112,6 +114,7 @@ Begin Window WindowMainBackupMySQL
       ScrollbarHorizontal=   True
       ScrollBarVertical=   True
       SelectionType   =   0
+      ShowDropIndicator=   False
       TabIndex        =   1
       TabPanelIndex   =   0
       TabStop         =   True
@@ -119,6 +122,7 @@ Begin Window WindowMainBackupMySQL
       TextSize        =   0.0
       TextUnit        =   0
       Top             =   64
+      Transparent     =   False
       Underline       =   False
       UseFocusRing    =   True
       Visible         =   True
@@ -162,6 +166,7 @@ Begin Window WindowMainBackupMySQL
       ScrollbarHorizontal=   True
       ScrollBarVertical=   True
       SelectionType   =   0
+      ShowDropIndicator=   False
       TabIndex        =   2
       TabPanelIndex   =   0
       TabStop         =   True
@@ -169,6 +174,7 @@ Begin Window WindowMainBackupMySQL
       TextSize        =   0.0
       TextUnit        =   0
       Top             =   297
+      Transparent     =   False
       Underline       =   False
       UseFocusRing    =   True
       Visible         =   True
@@ -203,11 +209,13 @@ Begin Window WindowMainBackupMySQL
       TextSize        =   0.0
       TextUnit        =   0
       Top             =   32
+      Transparent     =   False
       Underline       =   False
       Visible         =   True
       Width           =   132
    End
    Begin MySQL_Backup mMySQL_Backup
+      Enabled         =   True
       Index           =   -2147483648
       LockedInPosition=   False
       mDatabase       =   "0"
@@ -242,6 +250,7 @@ Begin Window WindowMainBackupMySQL
       TextSize        =   0.0
       TextUnit        =   0
       Top             =   32
+      Transparent     =   False
       Underline       =   False
       Visible         =   True
       Width           =   132
@@ -273,6 +282,7 @@ Begin Window WindowMainBackupMySQL
       TextSize        =   0.0
       TextUnit        =   0
       Top             =   32
+      Transparent     =   False
       Underline       =   False
       Visible         =   True
       Width           =   222
