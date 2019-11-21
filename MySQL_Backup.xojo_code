@@ -324,6 +324,7 @@ Protected Class MySQL_Backup
 			Group="ID"
 			InitialValue="-2147483648"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Left"
@@ -331,29 +332,39 @@ Protected Class MySQL_Backup
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="mDatabase"
+			Visible=false
 			Group="Behavior"
+			InitialValue=""
 			Type="Database"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="mFileName"
+			Visible=false
 			Group="Behavior"
 			InitialValue="Untitle"
 			Type="Text"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Super"
 			Visible=true
 			Group="ID"
+			InitialValue=""
 			Type="String"
+			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Top"
@@ -361,6 +372,7 @@ Protected Class MySQL_Backup
 			Group="Position"
 			InitialValue="0"
 			Type="Integer"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class
