@@ -32,7 +32,7 @@ Protected Class MySQL_Backup
 		    
 		    output.WriteLine("-- Xojo Desktop MySQL backup")
 		    output.WriteLine("-- version 0.0.1")
-		    output.WriteLine("-- http://kanjo.ca")
+		    output.WriteLine("-- https://kanjo.ca")
 		    output.WriteLine("--")
 		    output.WriteLine("-- Host: " + me.mDatabase.Host.ToText + ":" + me.mDatabase.DatabaseName.ToText )
 		    output.WriteLine("-- Generation Time: " + nowD.ToText )
