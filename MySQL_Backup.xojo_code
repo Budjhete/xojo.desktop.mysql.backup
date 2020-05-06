@@ -5,12 +5,21 @@ Protected Class MySQL_Backup
 		  Using Xojo.Core
 		  Using Xojo.IO
 		  
-		  call BackupNow(SpecialFolder.Temporary)
+		  call  BackupNow(SpecialFolder.Temporary, true)
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function BackupNow(fi as xojo.io.FolderItem, pWithDate as Boolean = true) As Xojo.IO.FolderItem
+		Function BackupNow(fi as Xojo.IO.FolderItem) As boolean
+		  Using Xojo.Core
+		  Using Xojo.IO
+		  
+		  return BackupNow(fi, true)<>nil 
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function BackupNow(fi as xojo.io.FolderItem, pWithDate as Boolean) As Xojo.IO.FolderItem
 		  Using Xojo.Core
 		  Using Xojo.IO
 		  
