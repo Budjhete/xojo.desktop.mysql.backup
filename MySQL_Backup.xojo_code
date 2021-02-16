@@ -2,32 +2,23 @@
 Protected Class MySQL_Backup
 	#tag Method, Flags = &h0
 		Sub BackupNow()
-		  Using Xojo.Core
-		  Using Xojo.IO
-		  
 		  call  BackupNow(SpecialFolder.Temporary, true)
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function BackupNow(fi as Xojo.IO.FolderItem) As boolean
-		  Using Xojo.Core
-		  Using Xojo.IO
-		  
+		Function BackupNow(fi as FolderItem) As boolean
 		  return BackupNow(fi, true)<>nil 
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function BackupNow(fi as xojo.io.FolderItem, pWithDate as Boolean) As Xojo.IO.FolderItem
-		  Using Xojo.Core
-		  Using Xojo.IO
+		Function BackupNow(fi as FolderItem, pWithDate as Boolean) As FolderItem
+		  dim nowD as DateTime = DateTime.now
 		  
-		  dim nowD as Date = Date.now
+		  dim sNowD as String = nowD.SQLDateTime().ReplaceAll(":", "")
 		  
-		  dim sNowD as text = nowD.ToText().ReplaceAll(":", "")
-		  
-		  dim filename as text = "backup-" + me.mDatabase.DatabaseName.ToText
+		  dim filename as String = "backup-" + me.mDatabase.DatabaseName.ToText
 		  
 		  if pWithDate then filename = filename + "-" + sNowD
 		  fi = fi.Child( filename + ".sql")
@@ -37,14 +28,14 @@ Protected Class MySQL_Backup
 		  
 		  Dim output As TextOutputStream
 		  Try
-		    output = TextOutputStream.Create(fi, TextEncoding.UTF8)
+		    output = TextOutputStream.Create(fi)
 		    
 		    output.WriteLine("-- Xojo Desktop MySQL backup")
 		    output.WriteLine("-- version 0.0.1")
 		    output.WriteLine("-- https://kanjo.ca")
 		    output.WriteLine("--")
-		    output.WriteLine("-- Host: " + me.mDatabase.Host.ToText + ":" + me.mDatabase.DatabaseName.ToText )
-		    output.WriteLine("-- Generation Time: " + nowD.ToText )
+		    output.WriteLine("-- Host: " + me.mDatabase.Host + ":" + me.mDatabase.DatabaseName )
+		    output.WriteLine("-- Generation Time: " + nowD.SQLDateTime )
 		    output.WriteLine("-- File Name: " + mFileName )
 		    
 		    output.WriteLine("SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';")
@@ -61,9 +52,9 @@ Protected Class MySQL_Backup
 		      // check DB engine for this table
 		      dim rci as RecordSet = me.mDatabase.SQLSelect("SELECT ENGINE FROM INFORMATION_SCHEMA.TABLES WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + rc.IdxField(1).StringValue + "'")
 		      // check Primary Keys for this table
-		      dim mPrimary as text = DefineEncoding(me.PrimaryKeys( rc.IdxField(1).StringValue ), Encodings.UTF8).ToText
+		      dim mPrimary as String = DefineEncoding(me.PrimaryKeys( rc.IdxField(1).StringValue ), Encodings.UTF8).ToText
 		      // check Unique Keys for this table
-		      Dim mUnique as text = DefineEncoding(me.UniqueKeys( rc.IdxField(1).StringValue ), Encodings.UTF8).ToText
+		      Dim mUnique as String = DefineEncoding(me.UniqueKeys( rc.IdxField(1).StringValue ), Encodings.UTF8).ToText
 		      
 		      if mUnique <> "" then
 		        if mPrimary <> "" then
@@ -322,7 +313,7 @@ Protected Class MySQL_Backup
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
-		mFileName As Text = "Untitle"
+		mFileName As String = "Untitle"
 	#tag EndProperty
 
 
