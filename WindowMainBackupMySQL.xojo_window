@@ -365,7 +365,7 @@ End
 		  db.Password = "123"
 		  
 		  If db.Connect Then
-		    db.SQLExecute("SET NAMES 'utf8'")
+		    db.ExecuteSQL("SET NAMES 'utf8'")
 		    
 		    mMySQL_Backup.mDatabase = db
 		  Else
