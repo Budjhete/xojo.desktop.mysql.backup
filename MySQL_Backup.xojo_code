@@ -347,8 +347,8 @@ Protected Class MySQL_Backup
 			Visible=false
 			Group="Behavior"
 			InitialValue="Untitle"
-			Type="Text"
-			EditorType=""
+			Type="String"
+			EditorType="MultiLineEditor"
 		#tag EndViewProperty
 		#tag ViewProperty
 			Name="Name"

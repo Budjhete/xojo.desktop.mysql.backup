@@ -158,9 +158,9 @@ End
 #tag WindowCode
 	#tag MenuHandler
 		Function FileClose() As Boolean Handles FileClose.Action
-			self.Close
-			Return True
-			
+		  self.Close
+		  Return True
+		  
 		End Function
 	#tag EndMenuHandler
 
