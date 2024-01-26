@@ -180,7 +180,7 @@ Protected Class MySQL_Backup
 		    output.Close
 		    Return fi
 		  Catch e As IOException
-		    System.DebugLog "Unable to append to file."
+		    
 		    Return nil
 		  End Try
 		  

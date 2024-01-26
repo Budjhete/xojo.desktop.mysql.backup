@@ -214,7 +214,6 @@ Begin Window WindowMainBackupMySQL
       Width           =   132
    End
    Begin MySQL_Backup mMySQL_Backup
-      Enabled         =   True
       Index           =   -2147483648
       LockedInPosition=   False
       mDatabase       =   0
@@ -339,6 +338,8 @@ End
 	#tag Event
 		Sub Action()
 		  mMySQL_Backup.BackupNow
+		  'mCompany.WriteLog(ModelLogs.Types.System, "Database Backup  dans le warehouse de base" )
+		  
 		End Sub
 	#tag EndEvent
 #tag EndEvents
