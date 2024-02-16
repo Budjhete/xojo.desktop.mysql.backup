@@ -214,6 +214,7 @@ Begin Window WindowMainBackupMySQL
       Width           =   132
    End
    Begin MySQL_Backup mMySQL_Backup
+      Enabled         =   True
       Index           =   -2147483648
       LockedInPosition=   False
       mDatabase       =   0
