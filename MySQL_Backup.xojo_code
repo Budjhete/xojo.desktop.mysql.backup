@@ -18,10 +18,10 @@ Protected Class MySQL_Backup
 		  
 		  dim sNowD as String = nowD.SQLDateTime().ReplaceAll(":", "")
 		  
-		  dim filename as String = "backup-" + me.mDatabase.DatabaseName.ToText
+		  dim filename as String = "backup-" + me.mDatabase.DatabaseName
 		  
 		  if pWithDate then filename = filename + "-" + sNowD
-		  fi = fi.Child( filename + ".sql")
+		  fi = fi.Child( filename + ".sql", false)
 		  
 		  dim rc as RecordSet = me.mDatabase.TableSchema
 		  
