@@ -52,9 +52,9 @@ Protected Class MySQL_Backup
 		      // check DB engine for this table
 		      dim rci as RecordSet = me.mDatabase.SQLSelect("SELECT ENGINE FROM INFORMATION_SCHEMA.TABLES WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + rc.IdxField(1).StringValue + "'")
 		      // check Primary Keys for this table
-		      dim mPrimary as String = DefineEncoding(me.PrimaryKeys( rc.IdxField(1).StringValue ), Encodings.UTF8).ToText
+		      dim mPrimary as String = DefineEncoding(me.PrimaryKeys( rc.IdxField(1).StringValue ), Encodings.UTF8)
 		      // check Unique Keys for this table
-		      Dim mUnique as String = DefineEncoding(me.UniqueKeys( rc.IdxField(1).StringValue ), Encodings.UTF8).ToText
+		      Dim mUnique as String = DefineEncoding(me.UniqueKeys( rc.IdxField(1).StringValue ), Encodings.UTF8)
 		      
 		      if mUnique <> "" then
 		        if mPrimary <> "" then
@@ -67,10 +67,10 @@ Protected Class MySQL_Backup
 		      end if
 		      
 		      output.WriteLine("--")
-		      output.WriteLine("-- Table structure for table `" + rc.IdxField(1).StringValue.ToText + "`")
+		      output.WriteLine("-- Table structure for table `" + rc.IdxField(1).StringValue + "`")
 		      output.WriteLine("--")
 		      output.WriteLine("")
-		      output.WriteLine("CREATE TABLE IF NOT EXISTS `" + rc.IdxField(1).StringValue.ToText + "` (")
+		      output.WriteLine("CREATE TABLE IF NOT EXISTS `" + rc.IdxField(1).StringValue + "` (")
 		      
 		      Dim mColumnsDataTypes() as String
 		      
@@ -85,7 +85,7 @@ Protected Class MySQL_Backup
 		        if Not rcf.EOF or mPrimary <> "" or mUnique <> "" then
 		          mfield = mfield + ","
 		        end if
-		        output.WriteLine( DefineEncoding(mfield, Encodings.UTF8).ToText )
+		        output.WriteLine( DefineEncoding(mfield, Encodings.UTF8) )
 		        
 		      wend
 		      
@@ -94,7 +94,7 @@ Protected Class MySQL_Backup
 		      
 		      dim mEngine as string = ") ENGINE=" + rci.Field("ENGINE").StringValue + " DEFAULT CHARSET=" + rcc.Field("DEFAULT_CHARACTER_SET_NAME").StringValue + " ;"
 		      
-		      output.WriteLine(DefineEncoding(mEngine, Encodings.UTF8).ToText)
+		      output.WriteLine(DefineEncoding(mEngine, Encodings.UTF8))
 		      output.WriteLine("")
 		      output.WriteLine("")
 		      
@@ -103,7 +103,7 @@ Protected Class MySQL_Backup
 		      
 		      if rcData.RecordCount > 0 then
 		        
-		        output.WriteLine("LOCK TABLES `" + rc.IdxField(1).StringValue.ToText + "` WRITE;")
+		        output.WriteLine("LOCK TABLES `" + rc.IdxField(1).StringValue + "` WRITE;")
 		        
 		        
 		        // INSERT INTO ...
@@ -119,7 +119,7 @@ Protected Class MySQL_Backup
 		        Next
 		        
 		        mINSERT = mINSERT + ")" + EndOfLine
-		        output.WriteLine( DefineEncoding(mINSERT, Encodings.UTF8).ToText )
+		        output.WriteLine( DefineEncoding(mINSERT, Encodings.UTF8) )
 		        
 		        // VALUES
 		        output.WriteLine( "VALUES" )
@@ -165,7 +165,7 @@ Protected Class MySQL_Backup
 		          else
 		            mData = mData + ";"
 		          end if
-		          output.WriteLine( DefineEncoding(mData, Encodings.UTF8).ToText )
+		          output.WriteLine( DefineEncoding(mData, Encodings.UTF8) )
 		          
 		          
 		        Wend
