@@ -1,31 +1,31 @@
-#tag Window
-Begin Window WindowMainBackupMySQL
-   BackColor       =   &cFFFFFF00
+#tag DesktopWindow
+Begin DesktopWindow WindowMainBackupMySQL
    Backdrop        =   0
-   CloseButton     =   True
+   BackgroundColor =   &cFFFFFF00
    Composite       =   False
-   Frame           =   0
+   DefaultLocation =   0
    FullScreen      =   False
-   FullScreenButton=   False
-   HasBackColor    =   False
+   HasBackgroundColor=   False
+   HasCloseButton  =   True
+   HasFullScreenButton=   False
+   HasMaximizeButton=   True
+   HasMinimizeButton=   True
+   HasTitleBar     =   True
    Height          =   700
    ImplicitInstance=   True
-   LiveResize      =   "True"
    MacProcID       =   0
-   MaxHeight       =   32000
-   MaximizeButton  =   True
-   MaxWidth        =   32000
+   MaximumHeight   =   32000
+   MaximumWidth    =   32000
    MenuBar         =   1963620351
    MenuBarVisible  =   True
-   MinHeight       =   64
-   MinimizeButton  =   True
-   MinWidth        =   64
-   Placement       =   0
+   MinimumHeight   =   64
+   MinimumWidth    =   64
    Resizeable      =   True
    Title           =   "Untitled"
+   Type            =   0
    Visible         =   True
    Width           =   1014
-   Begin Listbox Listbox1
+   Begin DesktopListBox Listbox1
       AllowAutoDeactivate=   True
       AllowAutoHideScrollbars=   True
       AllowExpandableRows=   False
@@ -44,8 +44,9 @@ Begin Window WindowMainBackupMySQL
       FontName        =   "System"
       FontSize        =   0.0
       FontUnit        =   0
-      GridLinesHorizontalStyle=   0
-      GridLinesVerticalStyle=   0
+      GridLinesHorizontalStyle=   "0"
+      GridLineStyle   =   0
+      GridLinesVerticalStyle=   "0"
       HasBorder       =   True
       HasHeader       =   True
       HasHorizontalScrollbar=   False
@@ -77,7 +78,7 @@ Begin Window WindowMainBackupMySQL
       _ScrollOffset   =   0
       _ScrollWidth    =   -1
    End
-   Begin Listbox Listbox2
+   Begin DesktopListBox Listbox2
       AllowAutoDeactivate=   True
       AllowAutoHideScrollbars=   True
       AllowExpandableRows=   False
@@ -96,8 +97,9 @@ Begin Window WindowMainBackupMySQL
       FontName        =   "System"
       FontSize        =   0.0
       FontUnit        =   0
-      GridLinesHorizontalStyle=   0
-      GridLinesVerticalStyle=   0
+      GridLinesHorizontalStyle=   "0"
+      GridLineStyle   =   0
+      GridLinesVerticalStyle=   "0"
       HasBorder       =   True
       HasHeader       =   True
       HasHorizontalScrollbar=   True
@@ -129,7 +131,7 @@ Begin Window WindowMainBackupMySQL
       _ScrollOffset   =   0
       _ScrollWidth    =   -1
    End
-   Begin Listbox Listbox3
+   Begin DesktopListBox Listbox3
       AllowAutoDeactivate=   True
       AllowAutoHideScrollbars=   True
       AllowExpandableRows=   False
@@ -148,8 +150,9 @@ Begin Window WindowMainBackupMySQL
       FontName        =   "System"
       FontSize        =   0.0
       FontUnit        =   0
-      GridLinesHorizontalStyle=   0
-      GridLinesVerticalStyle=   0
+      GridLinesHorizontalStyle=   "0"
+      GridLineStyle   =   0
+      GridLinesVerticalStyle=   "0"
       HasBorder       =   True
       HasHeader       =   True
       HasHorizontalScrollbar=   True
@@ -181,7 +184,7 @@ Begin Window WindowMainBackupMySQL
       _ScrollOffset   =   0
       _ScrollWidth    =   -1
    End
-   Begin PushButton PushButton1
+   Begin DesktopButton PushButton1
       AllowAutoDeactivate=   True
       Bold            =   False
       Cancel          =   False
@@ -222,7 +225,7 @@ Begin Window WindowMainBackupMySQL
       Scope           =   0
       TabPanelIndex   =   0
    End
-   Begin PushButton PushButton2
+   Begin DesktopButton PushButton2
       AllowAutoDeactivate=   True
       Bold            =   False
       Cancel          =   False
@@ -254,7 +257,7 @@ Begin Window WindowMainBackupMySQL
       Visible         =   True
       Width           =   132
    End
-   Begin PushButton PushButton3
+   Begin DesktopButton PushButton3
       AllowAutoDeactivate=   True
       Bold            =   False
       Cancel          =   False
@@ -287,17 +290,17 @@ Begin Window WindowMainBackupMySQL
       Width           =   222
    End
 End
-#tag EndWindow
+#tag EndDesktopWindow
 
 #tag WindowCode
 #tag EndWindowCode
 
 #tag Events Listbox1
 	#tag Event
-		Function CellClick(row as Integer, column as Integer, x as Integer, y as Integer) As Boolean
-		  Listbox2.DeleteAllRows
+		Function CellPressed(row As Integer, column As Integer, x As Integer, y As Integer) As Boolean
+		  Listbox2.RemoveAllRows
 		  
-		  dim rc as RecordSet = mMySQL_Backup.mDatabase.FieldSchema(me.Cell(row, column))
+		  dim rc as RecordSet = mMySQL_Backup.mDatabase.FieldSchema(me.CellTextAt(row, column))
 		  
 		  dim rcf as new Dictionary
 		  dim heads as string
@@ -306,7 +309,7 @@ End
 		    rcf.Value(rc.Field("ColumnName").StringValue) = rc.Field("FieldType").IntegerValue
 		    
 		    
-		    Listbox2.AddRow(rc.Field("ColumnName").StringValue, mMySQL_Backup.columnType(rc.Field("FieldType").IntegerValue), rc.Field("IsPrimary").StringValue, rc.Field("NotNull").StringValue, rc.Field("Length").StringValue)
+		    Listbox2.AddRow(rc.Field("ColumnName").StringValue, mMySQL_Backup.ColumnType(rc.Field("FieldType").IntegerValue), rc.Field("IsPrimary").StringValue, rc.Field("NotNull").StringValue, rc.Field("Length").StringValue)
 		    
 		    heads = heads + rc.Field("ColumnName").StringValue
 		    
@@ -316,11 +319,11 @@ End
 		    end if
 		  wend
 		  
-		  Listbox3.DeleteAllRows
+		  Listbox3.RemoveAllRows
 		  
-		  rc = mMySQL_Backup.mDatabase.SQLSelect("Select * FROM " + me.Cell(row, column))
+		  rc = mMySQL_Backup.mDatabase.SQLSelect("Select * FROM " + me.CellTextAt(row, column))
 		  Listbox3.ColumnCount = rc.FieldCount
-		  listbox3.Heading(-1) = heads
+		  listbox3.HeaderAt(-1) = heads
 		  
 		  
 		  While Not rc.EOF
@@ -337,7 +340,7 @@ End
 #tag EndEvents
 #tag Events PushButton1
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  mMySQL_Backup.BackupNow
 		  'mCompany.WriteLog(ModelLogs.Types.System, "Database Backup  dans le warehouse de base" )
 		  
@@ -346,14 +349,14 @@ End
 #tag EndEvents
 #tag Events PushButton2
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  WindowUsers.Show(mMySQL_Backup)
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events PushButton3
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  if mMySQL_Backup.mDatabase <> Nil then
 		    mMySQL_Backup.mDatabase.Close
 		  end if
@@ -372,11 +375,11 @@ End
 		    mMySQL_Backup.mDatabase = db
 		  Else
 		    ' Connection error
-		    MsgBox(db.ErrorMessage)
+		     MessageBox(db.ErrorMessage)
 		  End If
 		  
 		  dim rc as RecordSet = mMySQL_Backup.mDatabase.TableSchema
-		  Listbox1.DeleteAllRows
+		  Listbox1.RemoveAllRows
 		  
 		  while not rc.EOF
 		    Listbox1.AddRow(rc.IdxField(1).StringValue)
@@ -386,6 +389,14 @@ End
 	#tag EndEvent
 #tag EndEvents
 #tag ViewBehavior
+	#tag ViewProperty
+		Name="HasTitleBar"
+		Visible=true
+		Group="Frame"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumWidth"
 		Visible=true
@@ -435,8 +446,7 @@ End
 			"6 - Rounded Window"
 			"7 - Global Floating Window"
 			"8 - Sheet Window"
-			"9 - Metal Window"
-			"11 - Modeless Dialog"
+			"9 - Modeless Dialog"
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
@@ -499,8 +509,8 @@ End
 		Visible=true
 		Group="Background"
 		InitialValue="&hFFFFFF"
-		Type="Color"
-		EditorType="Color"
+		Type="ColorGroup"
+		EditorType="ColorGroup"
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
@@ -563,7 +573,7 @@ End
 		Visible=true
 		Group="Menus"
 		InitialValue=""
-		Type="MenuBar"
+		Type="DesktopMenuBar"
 		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty

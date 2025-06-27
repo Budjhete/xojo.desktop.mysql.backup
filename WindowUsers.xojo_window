@@ -1,31 +1,31 @@
-#tag Window
-Begin Window WindowUsers
-   BackColor       =   &cFFFFFF00
+#tag DesktopWindow
+Begin DesktopWindow WindowUsers
    Backdrop        =   0
-   CloseButton     =   True
+   BackgroundColor =   &cFFFFFF00
    Composite       =   False
-   Frame           =   0
+   DefaultLocation =   0
    FullScreen      =   False
-   FullScreenButton=   False
-   HasBackColor    =   False
+   HasBackgroundColor=   False
+   HasCloseButton  =   True
+   HasFullScreenButton=   False
+   HasMaximizeButton=   True
+   HasMinimizeButton=   True
+   HasTitleBar     =   True
    Height          =   400
    ImplicitInstance=   True
-   LiveResize      =   "True"
    MacProcID       =   0
-   MaxHeight       =   32000
-   MaximizeButton  =   True
-   MaxWidth        =   32000
+   MaximumHeight   =   32000
+   MaximumWidth    =   32000
    MenuBar         =   0
    MenuBarVisible  =   True
-   MinHeight       =   64
-   MinimizeButton  =   True
-   MinWidth        =   64
-   Placement       =   0
+   MinimumHeight   =   64
+   MinimumWidth    =   64
    Resizeable      =   True
    Title           =   "Untitled"
+   Type            =   0
    Visible         =   True
    Width           =   600
-   Begin Listbox Listbox1
+   Begin DesktopListBox Listbox1
       AllowAutoDeactivate=   True
       AllowAutoHideScrollbars=   True
       AllowExpandableRows=   False
@@ -44,8 +44,9 @@ Begin Window WindowUsers
       FontName        =   "System"
       FontSize        =   0.0
       FontUnit        =   0
-      GridLinesHorizontalStyle=   0
-      GridLinesVerticalStyle=   0
+      GridLinesHorizontalStyle=   "0"
+      GridLineStyle   =   0
+      GridLinesVerticalStyle=   "0"
       HasBorder       =   True
       HasHeader       =   False
       HasHorizontalScrollbar=   False
@@ -77,7 +78,7 @@ Begin Window WindowUsers
       _ScrollOffset   =   0
       _ScrollWidth    =   -1
    End
-   Begin PushButton PushButton1
+   Begin DesktopButton PushButton1
       AllowAutoDeactivate=   True
       Bold            =   False
       Cancel          =   False
@@ -109,7 +110,7 @@ Begin Window WindowUsers
       Visible         =   True
       Width           =   80
    End
-   Begin TextField TextField1
+   Begin DesktopTextField TextField1
       AllowAutoDeactivate=   True
       AllowFocusRing  =   True
       AllowSpellChecking=   False
@@ -153,7 +154,7 @@ Begin Window WindowUsers
       Width           =   468
    End
 End
-#tag EndWindow
+#tag EndDesktopWindow
 
 #tag WindowCode
 	#tag MenuHandler
@@ -193,7 +194,7 @@ End
 
 #tag Events PushButton1
 	#tag Event
-		Sub Action()
+		Sub Pressed()
 		  // see notes
 		  
 		  dim rc as RecordSet = mMySQL_backup.mDatabase.SQLSelect(TextField1.Text)
@@ -212,12 +213,20 @@ End
 		    Wend
 		    
 		  catch er as NilObjectException
-		    MsgBox "nil object"
+		     MessageBox "nil object"
 		  End Try
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag ViewBehavior
+	#tag ViewProperty
+		Name="HasTitleBar"
+		Visible=true
+		Group="Frame"
+		InitialValue="True"
+		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
 	#tag ViewProperty
 		Name="MinimumWidth"
 		Visible=true
@@ -267,8 +276,7 @@ End
 			"6 - Rounded Window"
 			"7 - Global Floating Window"
 			"8 - Sheet Window"
-			"9 - Metal Window"
-			"11 - Modeless Dialog"
+			"9 - Modeless Dialog"
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
@@ -331,8 +339,8 @@ End
 		Visible=true
 		Group="Background"
 		InitialValue="&hFFFFFF"
-		Type="Color"
-		EditorType="Color"
+		Type="ColorGroup"
+		EditorType="ColorGroup"
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="Backdrop"
@@ -395,7 +403,7 @@ End
 		Visible=true
 		Group="Menus"
 		InitialValue=""
-		Type="MenuBar"
+		Type="DesktopMenuBar"
 		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
