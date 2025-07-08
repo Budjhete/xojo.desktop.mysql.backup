@@ -213,7 +213,7 @@ End
 		    Wend
 		    
 		  catch er as NilObjectException
-		     MessageBox "nil object"
+		    MessageBox "nil object"
 		  End Try
 		End Sub
 	#tag EndEvent

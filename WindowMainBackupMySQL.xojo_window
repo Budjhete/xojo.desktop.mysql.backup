@@ -375,7 +375,7 @@ End
 		    mMySQL_Backup.mDatabase = db
 		  Else
 		    ' Connection error
-		     MessageBox(db.ErrorMessage)
+		    MessageBox(db.ErrorMessage)
 		  End If
 		  
 		  dim rc as RecordSet = mMySQL_Backup.mDatabase.TableSchema
