@@ -46,15 +46,15 @@ Protected Class MySQL_Backup
 		    while not rc.AfterLastRow // create table
 		      
 		      // check fields properties
-		      dim rcf as RowSet = me.mDatabase.SelectSQL("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + rc.ColumnAt(1).StringValue + "' ORDER BY table_name, ordinal_position")
+		      dim rcf as RowSet = me.mDatabase.SelectSQL("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + rc.ColumnAt(0).StringValue + "' ORDER BY table_name, ordinal_position")
 		      // check on Character Set for this table
 		      dim rcc as RowSet = me.mDatabase.SelectSQL("SELECT DEFAULT_CHARACTER_SET_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE Schema_name = '" + me.mDatabase.DatabaseName + "'")
 		      // check DB engine for this table
-		      dim rci as RowSet = me.mDatabase.SelectSQL("SELECT ENGINE FROM INFORMATION_SCHEMA.TABLES WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + rc.ColumnAt(1).StringValue + "'")
+		      dim rci as RowSet = me.mDatabase.SelectSQL("SELECT ENGINE FROM INFORMATION_SCHEMA.TABLES WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + rc.ColumnAt(0).StringValue + "'")
 		      // check Primary Keys for this table
-		      dim mPrimary as String = DefineEncoding(me.PrimaryKeys( rc.ColumnAt(1).StringValue ), Encodings.UTF8)
+		      dim mPrimary as String = DefineEncoding(me.PrimaryKeys( rc.ColumnAt(0).StringValue ), Encodings.UTF8)
 		      // check Unique Keys for this table
-		      Dim mUnique as String = DefineEncoding(me.UniqueKeys( rc.ColumnAt(1).StringValue ), Encodings.UTF8)
+		      Dim mUnique as String = DefineEncoding(me.UniqueKeys( rc.ColumnAt(0).StringValue ), Encodings.UTF8)
 		      
 		      if mUnique <> "" then
 		        if mPrimary <> "" then
@@ -67,10 +67,10 @@ Protected Class MySQL_Backup
 		      end if
 		      
 		      output.WriteLine("--")
-		      output.WriteLine("-- Table structure for table `" + rc.ColumnAt(1).StringValue + "`")
+		      output.WriteLine("-- Table structure for table `" + rc.ColumnAt(0).StringValue + "`")
 		      output.WriteLine("--")
 		      output.WriteLine("")
-		      output.WriteLine("CREATE TABLE IF NOT EXISTS `" + rc.ColumnAt(1).StringValue + "` (")
+		      output.WriteLine("CREATE TABLE IF NOT EXISTS `" + rc.ColumnAt(0).StringValue + "` (")
 		      
 		      Dim mColumnsDataTypes() as String
 		      
@@ -99,17 +99,17 @@ Protected Class MySQL_Backup
 		      output.WriteLine("")
 		      
 		      // now it's time to backup Datas
-		      dim rcData as RowSet = me.mDatabase.SelectSQL("Select * FROM " + rc.ColumnAt(1).StringValue )
+		      dim rcData as RowSet = me.mDatabase.SelectSQL("Select * FROM " + rc.ColumnAt(0).StringValue )
 		      
 		      if rcData.RowCount > 0 then
 		        
-		        output.WriteLine("LOCK TABLES `" + rc.ColumnAt(1).StringValue + "` WRITE;")
+		        output.WriteLine("LOCK TABLES `" + rc.ColumnAt(0).StringValue + "` WRITE;")
 		        
 		        
 		        // INSERT INTO ...
-		        dim mINSERT as string = "INSERT INTO `" + rc.ColumnAt(1).StringValue + "` ("
+		        dim mINSERT as string = "INSERT INTO `" + rc.ColumnAt(0).StringValue + "` ("
 		        
-		        For i as Integer = 1 to rcData.ColumnCount
+		        For i as Integer = 0 to rcData.ColumnCount-1
 		          
 		          mINSERT = mINSERT + "`" + rcData.ColumnAt(i).Name + "`"
 		          
@@ -128,7 +128,7 @@ Protected Class MySQL_Backup
 		        
 		        While Not rcData.AfterLastRow
 		          mData = "("
-		          For i as Integer = 1 to rcData.ColumnCount
+		          For i as Integer = 0 to rcData.ColumnCount -1
 		            
 		            dim mPreData as string
 		            if rcData.ColumnAt(i).Value.IsNull then
@@ -139,11 +139,11 @@ Protected Class MySQL_Backup
 		            
 		            
 		            
-		            if mColumnsDataTypes(i-1) = "int" _
-		              or mColumnsDataTypes(i-1) = "tinyint" _
-		              or mColumnsDataTypes(i-1) = "mediumint" _
-		              or mColumnsDataTypes(i-1) = "smallint" _
-		              or mColumnsDataTypes(i-1) = "decimal" _
+		            if mColumnsDataTypes(i) = "int" _
+		              or mColumnsDataTypes(i) = "tinyint" _
+		              or mColumnsDataTypes(i) = "mediumint" _
+		              or mColumnsDataTypes(i) = "smallint" _
+		              or mColumnsDataTypes(i) = "decimal" _
 		              or mPreData = "NULL" then
 		              mData = mData + mPreData
 		            Else
