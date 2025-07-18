@@ -300,40 +300,40 @@ End
 		Function CellPressed(row As Integer, column As Integer, x As Integer, y As Integer) As Boolean
 		  Listbox2.RemoveAllRows
 		  
-		  dim rc as RecordSet = mMySQL_Backup.mDatabase.FieldSchema(me.CellTextAt(row, column))
+		  dim rc as RowSet = mMySQL_Backup.mDatabase.TableColumns(me.CellTextAt(row, column))
 		  
 		  dim rcf as new Dictionary
 		  dim heads as string
-		  while not rc.EOF
+		  while not rc.AfterLastRow
 		    
-		    rcf.Value(rc.Field("ColumnName").StringValue) = rc.Field("FieldType").IntegerValue
+		    rcf.Value(rc.Column("ColumnName").StringValue) = rc.Column("FieldType").IntegerValue
 		    
 		    
-		    Listbox2.AddRow(rc.Field("ColumnName").StringValue, mMySQL_Backup.ColumnType(rc.Field("FieldType").IntegerValue), rc.Field("IsPrimary").StringValue, rc.Field("NotNull").StringValue, rc.Field("Length").StringValue)
+		    Listbox2.AddRow(rc.Column("ColumnName").StringValue, mMySQL_Backup.ColumnType(rc.Column("FieldType").IntegerValue), rc.Column("IsPrimary").StringValue, rc.Column("NotNull").StringValue, rc.Column("Length").StringValue)
 		    
-		    heads = heads + rc.Field("ColumnName").StringValue
+		    heads = heads + rc.Column("ColumnName").StringValue
 		    
-		    rc.MoveNext
-		    if not rc.EOF then
+		    rc.MoveToNextRow
+		    if not rc.AfterLastRow then
 		      heads = heads + Chr(9)
 		    end if
 		  wend
 		  
 		  Listbox3.RemoveAllRows
 		  
-		  rc = mMySQL_Backup.mDatabase.SQLSelect("Select * FROM " + me.CellTextAt(row, column))
-		  Listbox3.ColumnCount = rc.FieldCount
+		  rc = mMySQL_Backup.mDatabase.SelectSQL("Select * FROM " + me.CellTextAt(row, column))
+		  Listbox3.ColumnCount = rc.ColumnCount
 		  listbox3.HeaderAt(-1) = heads
 		  
 		  
-		  While Not rc.EOF
+		  While Not rc.AfterLastRow
 		    dim items() as string
 		    
-		    For i as Integer = 1 to rc.FieldCount
-		      items.Append(rc.IdxField(i).StringValue)
+		    For i as Integer = 1 to rc.ColumnCount
+		      items.Append(rc.ColumnAt(i).StringValue)
 		    Next
 		    Listbox3.AddRow(items)
-		    rc.MoveNext
+		    rc.MoveToNextRow
 		  Wend
 		End Function
 	#tag EndEvent
@@ -378,12 +378,12 @@ End
 		    MessageBox(db.ErrorMessage)
 		  End If
 		  
-		  dim rc as RecordSet = mMySQL_Backup.mDatabase.TableSchema
+		  dim rc as RowSet = mMySQL_Backup.mDatabase.Tables
 		  Listbox1.RemoveAllRows
 		  
-		  while not rc.EOF
-		    Listbox1.AddRow(rc.IdxField(1).StringValue)
-		    rc.MoveNext
+		  while not rc.AfterLastRow
+		    Listbox1.AddRow(rc.ColumnAt(1).StringValue)
+		    rc.MoveToNextRow
 		  wend
 		End Sub
 	#tag EndEvent

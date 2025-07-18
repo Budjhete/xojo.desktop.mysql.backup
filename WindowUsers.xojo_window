@@ -197,19 +197,19 @@ End
 		Sub Pressed()
 		  // see notes
 		  
-		  dim rc as RecordSet = mMySQL_backup.mDatabase.SQLSelect(TextField1.Text)
+		  dim rc as RowSet = mMySQL_backup.mDatabase.SelectSQL(TextField1.Text)
 		  
 		  Try
-		    Listbox1.ColumnCount = rc.FieldCount
+		    Listbox1.ColumnCount = rc.ColumnCount
 		    
-		    While Not rc.EOF
+		    While Not rc.AfterLastRow
 		      dim items() as string
 		      
-		      For i as Integer = 1 to rc.FieldCount
-		        items.Append(rc.IdxField(i).StringValue)
+		      For i as Integer = 1 to rc.ColumnCount
+		        items.Append(rc.ColumnAt(i).StringValue)
 		      Next
 		      Listbox1.AddRow(items)
-		      rc.MoveNext
+		      rc.MoveToNextRow
 		    Wend
 		    
 		  catch er as NilObjectException

@@ -23,7 +23,7 @@ Protected Class MySQL_Backup
 		  if pWithDate then filename = filename + "-" + sNowD
 		  fi = fi.Child( filename + ".sql", false)
 		  
-		  dim rc as RecordSet = me.mDatabase.TableSchema
+		  dim rc as RowSet = me.mDatabase.Tables
 		  
 		  
 		  Dim output As TextOutputStream
@@ -43,18 +43,18 @@ Protected Class MySQL_Backup
 		    output.WriteLine("")
 		    output.WriteLine("")
 		    
-		    while not rc.EOF // create table
+		    while not rc.AfterLastRow // create table
 		      
 		      // check fields properties
-		      dim rcf as RecordSet = me.mDatabase.SQLSelect("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + rc.IdxField(1).StringValue + "' ORDER BY table_name, ordinal_position")
+		      dim rcf as RowSet = me.mDatabase.SelectSQL("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + rc.ColumnAt(1).StringValue + "' ORDER BY table_name, ordinal_position")
 		      // check on Character Set for this table
-		      dim rcc as RecordSet = me.mDatabase.SQLSelect("SELECT DEFAULT_CHARACTER_SET_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE Schema_name = '" + me.mDatabase.DatabaseName + "'")
+		      dim rcc as RowSet = me.mDatabase.SelectSQL("SELECT DEFAULT_CHARACTER_SET_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE Schema_name = '" + me.mDatabase.DatabaseName + "'")
 		      // check DB engine for this table
-		      dim rci as RecordSet = me.mDatabase.SQLSelect("SELECT ENGINE FROM INFORMATION_SCHEMA.TABLES WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + rc.IdxField(1).StringValue + "'")
+		      dim rci as RowSet = me.mDatabase.SelectSQL("SELECT ENGINE FROM INFORMATION_SCHEMA.TABLES WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + rc.ColumnAt(1).StringValue + "'")
 		      // check Primary Keys for this table
-		      dim mPrimary as String = DefineEncoding(me.PrimaryKeys( rc.IdxField(1).StringValue ), Encodings.UTF8)
+		      dim mPrimary as String = DefineEncoding(me.PrimaryKeys( rc.ColumnAt(1).StringValue ), Encodings.UTF8)
 		      // check Unique Keys for this table
-		      Dim mUnique as String = DefineEncoding(me.UniqueKeys( rc.IdxField(1).StringValue ), Encodings.UTF8)
+		      Dim mUnique as String = DefineEncoding(me.UniqueKeys( rc.ColumnAt(1).StringValue ), Encodings.UTF8)
 		      
 		      if mUnique <> "" then
 		        if mPrimary <> "" then
@@ -67,22 +67,22 @@ Protected Class MySQL_Backup
 		      end if
 		      
 		      output.WriteLine("--")
-		      output.WriteLine("-- Table structure for table `" + rc.IdxField(1).StringValue + "`")
+		      output.WriteLine("-- Table structure for table `" + rc.ColumnAt(1).StringValue + "`")
 		      output.WriteLine("--")
 		      output.WriteLine("")
-		      output.WriteLine("CREATE TABLE IF NOT EXISTS `" + rc.IdxField(1).StringValue + "` (")
+		      output.WriteLine("CREATE TABLE IF NOT EXISTS `" + rc.ColumnAt(1).StringValue + "` (")
 		      
 		      Dim mColumnsDataTypes() as String
 		      
-		      While not rcf.EOF
+		      While not rcf.AfterLastRow
 		        
-		        dim mfield as string = "  `" + rcf.Field("Column_Name").StringValue + "` " + rcf.Field("Column_Type").StringValue + me.notNil(rcf.Field("is_Nullable")) + me.default(rcf.Field("Column_Default").Value) + " " + rcf.Field("extra").StringValue
+		        dim mfield as string = "  `" + rcf.Column("Column_Name").StringValue + "` " + rcf.Column("Column_Type").StringValue + me.notNil(rcf.Column("is_Nullable")) + me.default(rcf.Column("Column_Default").Value) + " " + rcf.Column("extra").StringValue
 		        
-		        mColumnsDataTypes.Append(rcf.Field("Data_Type").StringValue)
+		        mColumnsDataTypes.Append(rcf.Column("Data_Type").StringValue)
 		        
-		        rcf.MoveNext
+		        rcf.MoveToNextRow
 		        
-		        if Not rcf.EOF or mPrimary <> "" or mUnique <> "" then
+		        if Not rcf.AfterLastRow or mPrimary <> "" or mUnique <> "" then
 		          mfield = mfield + ","
 		        end if
 		        output.WriteLine( DefineEncoding(mfield, Encodings.UTF8) )
@@ -92,28 +92,28 @@ Protected Class MySQL_Backup
 		      output.WriteLine(mPrimary)
 		      output.WriteLine(mUnique)
 		      
-		      dim mEngine as string = ") ENGINE=" + rci.Field("ENGINE").StringValue + " DEFAULT CHARSET=" + rcc.Field("DEFAULT_CHARACTER_SET_NAME").StringValue + " ;"
+		      dim mEngine as string = ") ENGINE=" + rci.Column("ENGINE").StringValue + " DEFAULT CHARSET=" + rcc.Column("DEFAULT_CHARACTER_SET_NAME").StringValue + " ;"
 		      
 		      output.WriteLine(DefineEncoding(mEngine, Encodings.UTF8))
 		      output.WriteLine("")
 		      output.WriteLine("")
 		      
 		      // now it's time to backup Datas
-		      dim rcData as RecordSet = me.mDatabase.SQLSelect("Select * FROM " + rc.IdxField(1).StringValue )
+		      dim rcData as RowSet = me.mDatabase.SelectSQL("Select * FROM " + rc.ColumnAt(1).StringValue )
 		      
-		      if rcData.RecordCount > 0 then
+		      if rcData.RowCount > 0 then
 		        
-		        output.WriteLine("LOCK TABLES `" + rc.IdxField(1).StringValue + "` WRITE;")
+		        output.WriteLine("LOCK TABLES `" + rc.ColumnAt(1).StringValue + "` WRITE;")
 		        
 		        
 		        // INSERT INTO ...
-		        dim mINSERT as string = "INSERT INTO `" + rc.IdxField(1).StringValue + "` ("
+		        dim mINSERT as string = "INSERT INTO `" + rc.ColumnAt(1).StringValue + "` ("
 		        
-		        For i as Integer = 1 to rcData.FieldCount
+		        For i as Integer = 1 to rcData.ColumnCount
 		          
-		          mINSERT = mINSERT + "`" + rcData.IdxField(i).Name + "`"
+		          mINSERT = mINSERT + "`" + rcData.ColumnAt(i).Name + "`"
 		          
-		          if i <> rcData.FieldCount then
+		          if i <> rcData.ColumnCount then
 		            mINSERT = mINSERT + ", "
 		          end if
 		        Next
@@ -126,15 +126,15 @@ Protected Class MySQL_Backup
 		        
 		        dim mData as string
 		        
-		        While Not rcData.EOF
+		        While Not rcData.AfterLastRow
 		          mData = "("
-		          For i as Integer = 1 to rcData.FieldCount
+		          For i as Integer = 1 to rcData.ColumnCount
 		            
 		            dim mPreData as string
-		            if rcData.IdxField(i).Value.IsNull then
+		            if rcData.ColumnAt(i).Value.IsNull then
 		              mPreData = "NULL"
 		            else
-		              mPreData = ReplaceAll(rcData.IdxField(i).StringValue, "'", "\'")
+		              mPreData = ReplaceAll(rcData.ColumnAt(i).StringValue, "'", "\'")
 		            end if
 		            
 		            
@@ -152,15 +152,15 @@ Protected Class MySQL_Backup
 		            
 		            
 		            
-		            if i <> rcData.FieldCount then
+		            if i <> rcData.ColumnCount then
 		              mData = mData + ","
 		            end if
 		          Next
 		          
 		          mData = mData + ")"
-		          rcData.MoveNext
+		          rcData.MoveToNextRow
 		          
-		          if Not rcData.EOF then
+		          if Not rcData.AfterLastRow then
 		            mData = mData + ","
 		          else
 		            mData = mData + ";"
@@ -174,7 +174,7 @@ Protected Class MySQL_Backup
 		        
 		      end if
 		      
-		      rc.MoveNext
+		      rc.MoveToNextRow
 		    wend
 		    
 		    output.Close
@@ -264,14 +264,14 @@ Protected Class MySQL_Backup
 
 	#tag Method, Flags = &h0
 		Function PrimaryKeys(pTableName as string) As String
-		  dim rcp as RecordSet = me.mDatabase.SQLSelect("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + pTableName + "' AND constraint_name = 'PRIMARY'")
-		  if rcp.Field("COLUMN_NAME").Value <> nil then
+		  dim rcp as RowSet = me.mDatabase.SelectSQL("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + pTableName + "' AND constraint_name = 'PRIMARY'")
+		  if rcp.Column("COLUMN_NAME").Value <> nil then
 		    dim mPrimary as string = "PRIMARY KEY ("
 		    
-		    while Not rcp.EOF
-		      mPrimary = mPrimary + "`" + rcp.Field("COLUMN_NAME").StringValue + "`"
-		      rcp.MoveNext
-		      if not rcp.EOF then
+		    while Not rcp.AfterLastRow
+		      mPrimary = mPrimary + "`" + rcp.Column("COLUMN_NAME").StringValue + "`"
+		      rcp.MoveToNextRow
+		      if not rcp.AfterLastRow then
 		        mPrimary = mPrimary + ", "
 		      end if
 		    wend
@@ -286,15 +286,15 @@ Protected Class MySQL_Backup
 
 	#tag Method, Flags = &h0
 		Function UniqueKeys(pTableName as string) As String
-		  dim rcu as RecordSet = me.mDatabase.SQLSelect("SELECT CONSTRAINT_NAME, COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + pTableName + "' AND NOT constraint_name = 'PRIMARY'")
+		  dim rcu as RowSet = me.mDatabase.SelectSQL("SELECT CONSTRAINT_NAME, COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + pTableName + "' AND NOT constraint_name = 'PRIMARY'")
 		  'System.DebugLog "SELECT CONSTRAINT_NAME, COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + pTableName + "' AND NOT constraint_name = 'PRIMARY'"
-		  if rcu.Field("CONSTRAINT_NAME").Value <> nil then
-		    dim mPrimary as string = "UNIQUE KEY `" + rcu.Field("CONSTRAINT_NAME").StringValue + "` ("
+		  if rcu.Column("CONSTRAINT_NAME").Value <> nil then
+		    dim mPrimary as string = "UNIQUE KEY `" + rcu.Column("CONSTRAINT_NAME").StringValue + "` ("
 		    
-		    while Not rcu.EOF
-		      mPrimary = mPrimary + "`" + rcu.Field("COLUMN_NAME").StringValue + "`"
-		      rcu.MoveNext
-		      if not rcu.EOF then
+		    while Not rcu.AfterLastRow
+		      mPrimary = mPrimary + "`" + rcu.Column("COLUMN_NAME").StringValue + "`"
+		      rcu.MoveToNextRow
+		      if not rcu.AfterLastRow then
 		        mPrimary = mPrimary + ", "
 		      end if
 		    wend
