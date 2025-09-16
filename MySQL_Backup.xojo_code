@@ -78,7 +78,7 @@ Protected Class MySQL_Backup
 		        
 		        dim mfield as string = "  `" + rcf.Column("Column_Name").StringValue + "` " + rcf.Column("Column_Type").StringValue + me.notNil(rcf.Column("is_Nullable")) + me.default(rcf.Column("Column_Default").Value) + " " + rcf.Column("extra").StringValue
 		        
-		        mColumnsDataTypes.Append(rcf.Column("Data_Type").StringValue)
+		        mColumnsDataTypes.Add(rcf.Column("Data_Type").StringValue)
 		        
 		        rcf.MoveToNextRow
 		        
@@ -134,7 +134,7 @@ Protected Class MySQL_Backup
 		            if rcData.ColumnAt(i).Value.IsNull then
 		              mPreData = "NULL"
 		            else
-		              mPreData = ReplaceAll(rcData.ColumnAt(i).StringValue, "'", "\'")
+		              mPreData = rcData.ColumnAt(i).StringValue.ReplaceAll("'", "\'")
 		            end if
 		            
 		            
@@ -185,6 +185,13 @@ Protected Class MySQL_Backup
 		  End Try
 		  
 		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub Cancel()
+		  mCancel = True
+		  
+		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
@@ -252,6 +259,27 @@ Protected Class MySQL_Backup
 		End Function
 	#tag EndMethod
 
+	#tag Method, Flags = &h21
+		Private Function DoBackupWithProgress(t As Thread) As FolderItem
+		  // Example sketch – adapt to your real loops/rowsets
+		  Var target As FolderItem = SpecialFolder.Temporary // or pass it in
+		  Var withDate As Boolean = True
+		  
+		  // Tell UI where we’ll write
+		  t.AddUserInterfaceUpdate(New Dictionary("event":"progress","message":"Preparing output file…","percent":0.02))
+		  
+		  
+		  Var result As FolderItem = BackupNow(target, withDate)
+		  If result = Nil Then
+		    t.AddUserInterfaceUpdate(New Dictionary("event":"progress","message":"No result produced.","percent":1.0))
+		  Else
+		    t.AddUserInterfaceUpdate(New Dictionary("event":"progress","message":"Backup file saved: " + result.NativePath,"percent":1.0))
+		  End If
+		  
+		  Return result
+		End Function
+	#tag EndMethod
+
 	#tag Method, Flags = &h0
 		Function NotNil(pNotNil as string) As string
 		  if pNotNil = "No" then
@@ -285,6 +313,25 @@ Protected Class MySQL_Backup
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Sub StartAsync(targetFolder As FolderItem, withDate As Boolean = True)
+		  If mIsRunning Then Return
+		  
+		  mCancel = False
+		  mLastResult = Nil
+		  
+		  mWorker = New Thread
+		  AddHandler mWorker.Run, AddressOf Worker_Run
+		  'AddHandler mWorker.AddUserInterfaceUpdate, AddressOf Worker_UIUpdate
+		  
+		  mIsRunning = True
+		  RaiseEvent Started
+		  
+		  // Kick off
+		  mWorker.Run
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function UniqueKeys(pTableName as string) As String
 		  dim rcu as RowSet = me.mDatabase.SelectSQL("SELECT CONSTRAINT_NAME, COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + pTableName + "' AND NOT constraint_name = 'PRIMARY'")
 		  'System.DebugLog "SELECT CONSTRAINT_NAME, COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + pTableName + "' AND NOT constraint_name = 'PRIMARY'"
@@ -307,6 +354,76 @@ Protected Class MySQL_Backup
 		End Function
 	#tag EndMethod
 
+	#tag Method, Flags = &h0
+		Sub Worker_Run(t As Thread)
+		  Try
+		    // Example: announce “starting” to UI
+		    t.AddUserInterfaceUpdate(New Dictionary("event":"progress","message":"Starting backup…","percent":0.0))
+		    
+		    // >>> Your long work here <<<
+		    // If you want to keep all the logic in your current BackupNow(...),
+		    // call a new private wrapper that checks mCancel and posts progress.
+		    
+		    mLastResult = DoBackupWithProgress(t) // returns FolderItem or Nil
+		    
+		    // Signal finished success
+		    t.AddUserInterfaceUpdate(New Dictionary("event":"finished","hadError": (mLastResult Is Nil)))
+		  Catch e As RuntimeException
+		    t.AddUserInterfaceUpdate(New Dictionary("event":"error","message": e.Message))
+		    t.AddUserInterfaceUpdate(New Dictionary("event":"finished","hadError": True))
+		  End Try
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub Worker_UIUpdate(t As Thread, info As Dictionary)
+		  Var ev As String = info.Value("event").StringValue
+		  
+		  Select Case ev
+		  Case "progress"
+		    Var msg As String = info.Lookup("message","").StringValue
+		    Var pct As Double =  info.Lookup("percent", -1.0).DoubleValue
+		    RaiseEvent Progress(msg, pct)
+		    
+		  Case "error"
+		    RaiseEvent ErrorOccurred(info.Lookup("message","Unknown error").StringValue)
+		    
+		  Case "finished"
+		    Var hadErr As Boolean = info.Lookup("hadError", False).BooleanValue
+		    RaiseEvent Finished(mLastResult, hadErr)
+		    
+		    // Cleanup
+		    mIsRunning = False
+		    If mWorker <> Nil Then
+		      RemoveHandler mWorker.Run, AddressOf Worker_Run
+		      'RemoveHandler mWorker.UserInterfaceUpdate, AddressOf Worker_UIUpdate
+		      mWorker = Nil
+		    End If
+		  End Select
+		End Sub
+	#tag EndMethod
+
+
+	#tag Hook, Flags = &h0
+		Event ErrorOccurred(message As String)
+	#tag EndHook
+
+	#tag Hook, Flags = &h0
+		Event Finished(result As FolderItem, hadError As Boolean)
+	#tag EndHook
+
+	#tag Hook, Flags = &h0
+		Event Progress(message As String, percent As Double)
+	#tag EndHook
+
+	#tag Hook, Flags = &h0
+		Event Started()
+	#tag EndHook
+
+
+	#tag Property, Flags = &h21
+		Private mCancel As Boolean = false
+	#tag EndProperty
 
 	#tag Property, Flags = &h0
 		mDatabase As Database
@@ -314,6 +431,18 @@ Protected Class MySQL_Backup
 
 	#tag Property, Flags = &h0
 		mFileName As String = "Untitle"
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mIsRunning As Boolean = false
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mLastResult As FolderItem
+	#tag EndProperty
+
+	#tag Property, Flags = &h21
+		Private mWorker As Thread
 	#tag EndProperty
 
 

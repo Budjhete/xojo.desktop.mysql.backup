@@ -330,7 +330,7 @@ End
 		    dim items() as string
 		    
 		    For i as Integer = 1 to rc.ColumnCount
-		      items.Append(rc.ColumnAt(i).StringValue)
+		      items.Add(rc.ColumnAt(i).StringValue)
 		    Next
 		    Listbox3.AddRow(items)
 		    rc.MoveToNextRow
