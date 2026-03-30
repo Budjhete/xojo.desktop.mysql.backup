@@ -13,16 +13,35 @@ Protected Class MySQL_Backup
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function BackupNow(fi as FolderItem, pWithDate as Boolean) As FolderItem
+		Function BackupNow(fi as FolderItem, pWithDate as Boolean, pThread As Thread = Nil, pProgressStart As Integer = 0, pProgressEnd As Integer = 100) As FolderItem
 		  dim nowD as DateTime = DateTime.now
 		  
 		  dim sNowD as String = nowD.SQLDateTime().ReplaceAll(":", "")
 		  
 		  dim filename as String = "backup-" + me.mDatabase.DatabaseName
+		  dim progressSpan as Integer = pProgressEnd - pProgressStart
 		  
 		  if pWithDate then filename = filename + "-" + sNowD
 		  fi = fi.Child( filename + ".sql", false)
 		  
+		  if progressSpan < 1 then
+		    progressSpan = 1
+		  end if
+		  
+		  PostProgress(pThread, pProgressStart, kCreationDunBackupEnCours_(App.lang))
+		  
+		  dim totalTables as Integer = 0
+		  dim rcCounter as RowSet = me.mDatabase.Tables
+		  while not rcCounter.AfterLastRow
+		    totalTables = totalTables + 1
+		    rcCounter.MoveToNextRow
+		  wend
+		  
+		  if totalTables = 0 then
+		    totalTables = 1
+		  end if
+		  
+		  dim processedTables as Integer = 0
 		  dim rc as RowSet = me.mDatabase.Tables
 		  
 		  
@@ -44,17 +63,19 @@ Protected Class MySQL_Backup
 		    output.WriteLine("")
 		    
 		    while not rc.AfterLastRow // create table
+		      dim tableName as String = rc.ColumnAt(0).StringValue
+		      PostProgress(pThread, pProgressStart + ((processedTables * progressSpan) / totalTables), kBackup(App.lang) + " : " + tableName)
 		      
 		      // check fields properties
-		      dim rcf as RowSet = me.mDatabase.SelectSQL("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + rc.ColumnAt(0).StringValue + "' ORDER BY table_name, ordinal_position")
+		      dim rcf as RowSet = me.mDatabase.SelectSQL("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + tableName + "' ORDER BY table_name, ordinal_position")
 		      // check on Character Set for this table
 		      dim rcc as RowSet = me.mDatabase.SelectSQL("SELECT DEFAULT_CHARACTER_SET_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE Schema_name = '" + me.mDatabase.DatabaseName + "'")
 		      // check DB engine for this table
-		      dim rci as RowSet = me.mDatabase.SelectSQL("SELECT ENGINE FROM INFORMATION_SCHEMA.TABLES WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + rc.ColumnAt(0).StringValue + "'")
+		      dim rci as RowSet = me.mDatabase.SelectSQL("SELECT ENGINE FROM INFORMATION_SCHEMA.TABLES WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + tableName + "'")
 		      // check Primary Keys for this table
-		      dim mPrimary as String = DefineEncoding(me.PrimaryKeys( rc.ColumnAt(0).StringValue ), Encodings.UTF8)
+		      dim mPrimary as String = DefineEncoding(me.PrimaryKeys( tableName ), Encodings.UTF8)
 		      // check Unique Keys for this table
-		      Dim mUnique as String = DefineEncoding(me.UniqueKeys( rc.ColumnAt(0).StringValue ), Encodings.UTF8)
+		      Dim mUnique as String = DefineEncoding(me.UniqueKeys( tableName ), Encodings.UTF8)
 		      
 		      if mUnique <> "" then
 		        if mPrimary <> "" then
@@ -67,10 +88,10 @@ Protected Class MySQL_Backup
 		      end if
 		      
 		      output.WriteLine("--")
-		      output.WriteLine("-- Table structure for table `" + rc.ColumnAt(0).StringValue + "`")
+		      output.WriteLine("-- Table structure for table `" + tableName + "`")
 		      output.WriteLine("--")
 		      output.WriteLine("")
-		      output.WriteLine("CREATE TABLE IF NOT EXISTS `" + rc.ColumnAt(0).StringValue + "` (")
+		      output.WriteLine("CREATE TABLE IF NOT EXISTS `" + tableName + "` (")
 		      
 		      Dim mColumnsDataTypes() as String
 		      
@@ -99,15 +120,15 @@ Protected Class MySQL_Backup
 		      output.WriteLine("")
 		      
 		      // now it's time to backup Datas
-		      dim rcData as RowSet = me.mDatabase.SelectSQL("Select * FROM " + rc.ColumnAt(0).StringValue )
+		      dim rcData as RowSet = me.mDatabase.SelectSQL("Select * FROM " + tableName )
 		      
 		      if rcData.RowCount > 0 then
 		        
-		        output.WriteLine("LOCK TABLES `" + rc.ColumnAt(0).StringValue + "` WRITE;")
+		        output.WriteLine("LOCK TABLES `" + tableName + "` WRITE;")
 		        
 		        
 		        // INSERT INTO ...
-		        dim mINSERT as string = "INSERT INTO `" + rc.ColumnAt(0).StringValue + "` ("
+		        dim mINSERT as string = "INSERT INTO `" + tableName + "` ("
 		        
 		        For i as Integer = 0 to rcData.ColumnCount-1
 		          
@@ -174,12 +195,16 @@ Protected Class MySQL_Backup
 		        
 		      end if
 		      
+		      processedTables = processedTables + 1
+		      PostProgress(pThread, pProgressStart + ((processedTables * progressSpan) / totalTables), kBackup(App.lang) + " : " + tableName)
 		      rc.MoveToNextRow
 		    wend
 		    
 		    output.Close
+		    PostProgress(pThread, pProgressEnd, kBackupFait(App.lang))
 		    Return fi
 		  Catch e As IOException
+		    PostProgress(pThread, pProgressStart, kBackupFailed(App.lang))
 		    
 		    Return nil
 		  End Try
@@ -288,6 +313,20 @@ Protected Class MySQL_Backup
 		    Return " "
 		  end
 		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Sub PostProgress(pThread As Thread, pProgress As Integer, pMessage As String)
+		  If pThread = Nil Then Return
+		  
+		  If pProgress < 0 Then
+		    pProgress = 0
+		  ElseIf pProgress > 100 Then
+		    pProgress = 100
+		  End If
+		  
+		  pThread.AddUserInterfaceUpdate("UIProgress":pProgress, "UIMessage":pMessage)
+		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
