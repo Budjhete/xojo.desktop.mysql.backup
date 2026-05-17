@@ -134,7 +134,7 @@ Protected Class MySQL_Backup
 		          
 		          mINSERT = mINSERT + "`" + rcData.ColumnAt(i).Name + "`"
 		          
-		          if i <> rcData.ColumnCount then
+		          if i <> rcData.ColumnCount - 1 then
 		            mINSERT = mINSERT + ", "
 		          end if
 		        Next
@@ -173,7 +173,7 @@ Protected Class MySQL_Backup
 		            
 		            
 		            
-		            if i <> rcData.ColumnCount then
+		            if i <> rcData.ColumnCount - 1 then
 		              mData = mData + ","
 		            end if
 		          Next
