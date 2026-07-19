@@ -362,20 +362,20 @@ End
 		  end if
 		  
 		  
-		  Dim db As New MySQLCommunityServer
-		  db.Host = "localhost"
-		  db.Port = 3306
-		  db.DatabaseName = "k_test"
-		  db.UserName = "test"
-		  db.Password = "123"
+		  Dim mysqlDatabase As New MySQLCommunityServer
+		  mysqlDatabase.Host = "localhost"
+		  mysqlDatabase.Port = 3306
+		  mysqlDatabase.DatabaseName = "k_test"
+		  mysqlDatabase.UserName = "test"
+		  mysqlDatabase.Password = "123"
 		  
-		  If db.Connect Then
-		    db.ExecuteSQL("SET NAMES 'utf8'")
+		  If mysqlDatabase.Connect Then
+		    DB.InitializeMySQLSession(mysqlDatabase)
 		    
-		    mMySQL_Backup.mDatabase = db
+		    mMySQL_Backup.mDatabase = mysqlDatabase
 		  Else
 		    ' Connection error
-		    MessageBox(db.ErrorMessage)
+		    MessageBox(mysqlDatabase.ErrorMessage)
 		  End If
 		  
 		  dim rc as RowSet = mMySQL_Backup.mDatabase.Tables
