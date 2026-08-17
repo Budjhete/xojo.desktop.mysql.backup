@@ -8,214 +8,272 @@ Protected Class MySQL_Backup
 
 	#tag Method, Flags = &h0
 		Function BackupNow(fi as FolderItem) As boolean
-		  return BackupNow(fi, true)<>nil 
+		  return BackupNow(fi, true)<>nil
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function BackupNow(fi as FolderItem, pWithDate as Boolean, pThread As Thread = Nil, pProgressStart As Integer = 0, pProgressEnd As Integer = 100) As FolderItem
-		  dim nowD as DateTime = DateTime.now
-		  
-		  dim sNowD as String = nowD.SQLDateTime().ReplaceAll(":", "")
-		  
-		  dim filename as String = "backup-" + me.mDatabase.DatabaseName
-		  dim progressSpan as Integer = pProgressEnd - pProgressStart
-		  
-		  if pWithDate then filename = filename + "-" + sNowD
-		  fi = fi.Child( filename + ".sql", false)
-		  
-		  if progressSpan < 1 then
-		    progressSpan = 1
-		  end if
-		  
-		  PostProgress(pThread, pProgressStart, kCreationDunBackupEnCours_(App.lang))
-		  
-		  dim totalTables as Integer = 0
-		  dim rcCounter as RowSet = me.mDatabase.Tables
-		  while not rcCounter.AfterLastRow
-		    totalTables = totalTables + 1
-		    rcCounter.MoveToNextRow
-		  wend
-		  
-		  if totalTables = 0 then
-		    totalTables = 1
-		  end if
-		  
-		  dim processedTables as Integer = 0
-		  dim rc as RowSet = me.mDatabase.Tables
-		  
-		  
+		  If fi Is Nil Or mDatabase Is Nil Or Not (mDatabase IsA MySQLCommunityServer) Then Return Nil
+
+		  Dim nowD As DateTime = DateTime.Now
+		  Dim filename As String = "backup-" + mDatabase.DatabaseName
+		  If pWithDate Then filename = filename + "-" + nowD.SQLDateTime.ReplaceAll(":", "")
+		  Dim backupFile As FolderItem = fi.Child(filename + ".sql", False)
+		  If backupFile Is Nil Then Return Nil
+
+		  Dim progressSpan As Integer = pProgressEnd - pProgressStart
+		  If progressSpan < 1 Then progressSpan = 1
+		  PostProgress(pThread, pProgressStart, kCreationDunBackupEnCours_(App.Lang))
+
 		  Dim output As TextOutputStream
+		  Dim transactionStarted As Boolean
 		  Try
-		    output = TextOutputStream.Create(fi)
-		    
-		    output.WriteLine("-- Xojo Desktop MySQL backup")
-		    output.WriteLine("-- version 0.0.1")
-		    output.WriteLine("-- https://kanjo.ca")
-		    output.WriteLine("--")
-		    output.WriteLine("-- Host: " + me.mDatabase.Host + ":" + me.mDatabase.DatabaseName )
-		    output.WriteLine("-- Generation Time: " + nowD.SQLDateTime )
-		    output.WriteLine("-- File Name: " + mFileName )
-		    
-		    output.WriteLine("SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';")
-		    output.WriteLine("SET time_zone = '+00:00';")  // TODO : find a way to detect the timezone ?
-		    output.WriteLine("")
-		    output.WriteLine("")
-		    
-		    while not rc.AfterLastRow // create table
-		      dim tableName as String = rc.ColumnAt(0).StringValue
-		      PostProgress(pThread, pProgressStart + ((processedTables * progressSpan) / totalTables), kBackup(App.lang) + " : " + tableName)
-		      
-		      // check fields properties
-		      dim rcf as RowSet = me.mDatabase.SelectSQL("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + tableName + "' ORDER BY table_name, ordinal_position")
-		      // check on Character Set for this table
-		      dim rcc as RowSet = me.mDatabase.SelectSQL("SELECT DEFAULT_CHARACTER_SET_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE Schema_name = '" + me.mDatabase.DatabaseName + "'")
-		      // check DB engine for this table
-		      dim rci as RowSet = me.mDatabase.SelectSQL("SELECT ENGINE FROM INFORMATION_SCHEMA.TABLES WHERE table_schema = '" + me.mDatabase.DatabaseName + "' AND table_name = '" + tableName + "'")
-		      // check Primary Keys for this table
-		      dim mPrimary as String = DefineEncoding(me.PrimaryKeys( tableName ), Encodings.UTF8)
-		      // check Unique Keys for this table
-		      Dim mUnique as String = DefineEncoding(me.UniqueKeys( tableName ), Encodings.UTF8)
-		      
-		      if mUnique <> "" then
-		        if mPrimary <> "" then
-		          mPrimary = mPrimary + "," + Text.FromUnicodeCodepoint(10)
-		        end if
-		      else
-		        if mPrimary <> "" then
-		          mPrimary = mPrimary + Text.FromUnicodeCodepoint(10)
-		        end if
-		      end if
-		      
-		      output.WriteLine("--")
-		      output.WriteLine("-- Table structure for table `" + tableName + "`")
-		      output.WriteLine("--")
-		      output.WriteLine("")
-		      output.WriteLine("CREATE TABLE IF NOT EXISTS `" + tableName + "` (")
-		      
-		      Dim mColumnsDataTypes() as String
-		      
-		      While not rcf.AfterLastRow
-		        
-		        dim mfield as string = "  `" + rcf.Column("Column_Name").StringValue + "` " + rcf.Column("Column_Type").StringValue + me.notNil(rcf.Column("is_Nullable")) + me.default(rcf.Column("Column_Default").Value) + " " + rcf.Column("extra").StringValue
-		        
-		        mColumnsDataTypes.Add(rcf.Column("Data_Type").StringValue)
-		        
-		        rcf.MoveToNextRow
-		        
-		        if Not rcf.AfterLastRow or mPrimary <> "" or mUnique <> "" then
-		          mfield = mfield + ","
-		        end if
-		        output.WriteLine( DefineEncoding(mfield, Encodings.UTF8) )
-		        
-		      wend
-		      
-		      output.WriteLine(mPrimary)
-		      output.WriteLine(mUnique)
-		      
-		      dim mEngine as string = ") ENGINE=" + rci.Column("ENGINE").StringValue + " DEFAULT CHARSET=" + rcc.Column("DEFAULT_CHARACTER_SET_NAME").StringValue + " ;"
-		      
-		      output.WriteLine(DefineEncoding(mEngine, Encodings.UTF8))
-		      output.WriteLine("")
-		      output.WriteLine("")
-		      
-		      // now it's time to backup Datas
-		      dim rcData as RowSet = me.mDatabase.SelectSQL("Select * FROM " + tableName )
-		      
-		      if rcData.RowCount > 0 then
-		        
-		        output.WriteLine("LOCK TABLES `" + tableName + "` WRITE;")
-		        
-		        
-		        // INSERT INTO ...
-		        dim mINSERT as string = "INSERT INTO `" + tableName + "` ("
-		        
-		        For i as Integer = 0 to rcData.ColumnCount-1
-		          
-		          mINSERT = mINSERT + "`" + rcData.ColumnAt(i).Name + "`"
-		          
-		          if i <> rcData.ColumnCount - 1 then
-		            mINSERT = mINSERT + ", "
-		          end if
+		    Dim tables As RowSet = mDatabase.SelectSQL("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME", mDatabase.DatabaseName)
+		    Dim tableNames() As String
+		    While Not tables.AfterLastRow
+		      tableNames.Add(tables.Column("TABLE_NAME").StringValue)
+		      tables.MoveToNextRow
+		    Wend
+		    Dim totalTables As Integer = tableNames.Count
+		    If totalTables < 1 Then totalTables = 1
+
+		    mDatabase.ExecuteSQL("SET time_zone = '+00:00'")
+		    mDatabase.ExecuteSQL("SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+		    mDatabase.ExecuteSQL("START TRANSACTION WITH CONSISTENT SNAPSHOT")
+		    transactionStarted = True
+
+		    output = TextOutputStream.Create(backupFile)
+		    output.WriteLine(kBackupVersionHeader)
+		    output.WriteLine("-- Kanjo Desktop MySQL/MariaDB backup")
+		    output.WriteLine("-- Database: " + mDatabase.DatabaseName)
+		    output.WriteLine("-- Generation time: " + nowD.SQLDateTime)
+		    WriteStatement(output, "SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO'")
+		    WriteStatement(output, "SET NAMES utf8mb4")
+		    WriteStatement(output, "SET time_zone = '+00:00'")
+		    WriteStatement(output, "SET FOREIGN_KEY_CHECKS = 0")
+
+		    Dim processedTables As Integer
+		    For Each tableName As String In tableNames
+		      PostProgress(pThread, pProgressStart + ((processedTables * progressSpan) / totalTables), kBackup(App.Lang) + " : " + tableName)
+
+		      Dim createRow As RowSet = mDatabase.SelectSQL("SHOW CREATE TABLE " + QuoteIdentifier(tableName))
+		      If createRow Is Nil Or createRow.AfterLastRow Then
+		        output.Close
+		        output = Nil
+		        mDatabase.ExecuteSQL("ROLLBACK")
+		        transactionStarted = False
+		        If backupFile.Exists Then backupFile.Remove
+		        PostProgress(pThread, pProgressStart, kBackupFailed(App.Lang))
+		        Return Nil
+		      End If
+
+		      WriteStatement(output, "DROP TABLE IF EXISTS " + QuoteIdentifier(tableName))
+		      WriteStatement(output, createRow.ColumnAt(1).StringValue)
+
+		      Dim dataTypes As New Dictionary
+		      Dim generatedColumns As New Dictionary
+		      Dim columnTypes As RowSet = mDatabase.SelectSQL("SELECT COLUMN_NAME, DATA_TYPE, EXTRA FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION", mDatabase.DatabaseName, tableName)
+		      While Not columnTypes.AfterLastRow
+		        Dim metadataColumnName As String = columnTypes.Column("COLUMN_NAME").StringValue.Lowercase
+		        dataTypes.Value(metadataColumnName) = columnTypes.Column("DATA_TYPE").StringValue.Lowercase
+		        Dim extraMetadata As String = columnTypes.Column("EXTRA").StringValue.Lowercase
+		        If extraMetadata.Contains("virtual generated") Or extraMetadata.Contains("stored generated") Then generatedColumns.Value(metadataColumnName) = True
+		        columnTypes.MoveToNextRow
+		      Wend
+
+		      Dim dataRows As RowSet = mDatabase.SelectSQL("SELECT * FROM " + QuoteIdentifier(tableName))
+		      Dim rowCount As Integer = dataRows.RowCount
+		      output.WriteLine("-- KANJO_TABLE_ROWS " + tableName + "=" + rowCount.ToString)
+
+		      If Not dataRows.AfterLastRow Then
+		        Dim insertPrefix As String = "INSERT INTO " + QuoteIdentifier(tableName) + " ("
+		        Dim includedColumnIndexes() As Integer
+		        For columnIndex As Integer = 0 To dataRows.ColumnCount - 1
+		          Dim columnName As String = dataRows.ColumnAt(columnIndex).Name
+		          If Not generatedColumns.HasKey(columnName.Lowercase) Then
+		            If includedColumnIndexes.Count > 0 Then insertPrefix = insertPrefix + ","
+		            insertPrefix = insertPrefix + QuoteIdentifier(columnName)
+		            includedColumnIndexes.Add(columnIndex)
+		          End If
 		        Next
-		        
-		        mINSERT = mINSERT + ")" + EndOfLine
-		        output.WriteLine( DefineEncoding(mINSERT, Encodings.UTF8) )
-		        
-		        // VALUES
-		        output.WriteLine( "VALUES" )
-		        
-		        dim mData as string
-		        
-		        While Not rcData.AfterLastRow
-		          mData = "("
-		          For i as Integer = 0 to rcData.ColumnCount -1
-		            
-		            dim mPreData as string
-		            if rcData.ColumnAt(i).Value.IsNull then
-		              mPreData = "NULL"
-		            else
-		              mPreData = rcData.ColumnAt(i).StringValue.ReplaceAll("'", "\'")
-		            end if
-		            
-		            
-		            
-		            if mColumnsDataTypes(i) = "int" _
-		              or mColumnsDataTypes(i) = "tinyint" _
-		              or mColumnsDataTypes(i) = "mediumint" _
-		              or mColumnsDataTypes(i) = "smallint" _
-		              or mColumnsDataTypes(i) = "decimal" _
-		              or mPreData = "NULL" then
-		              mData = mData + mPreData
-		            Else
-		              mData = mData + "'" + mPreData + "'"
-		            End
-		            
-		            
-		            
-		            if i <> rcData.ColumnCount - 1 then
-		              mData = mData + ","
-		            end if
+		        insertPrefix = insertPrefix + ") VALUES ("
+
+		        While Not dataRows.AfterLastRow
+		          Dim insertSQL As String = insertPrefix
+		          For valueIndex As Integer = 0 To includedColumnIndexes.LastIndex
+		            If valueIndex > 0 Then insertSQL = insertSQL + ","
+		            Dim columnIndex As Integer = includedColumnIndexes(valueIndex)
+		            Dim columnName As String = dataRows.ColumnAt(columnIndex).Name
+		            Dim dataType As String = dataTypes.Lookup(columnName.Lowercase, "").StringValue
+		            insertSQL = insertSQL + SQLValue(dataRows.ColumnAt(columnIndex), dataType)
 		          Next
-		          
-		          mData = mData + ")"
-		          rcData.MoveToNextRow
-		          
-		          if Not rcData.AfterLastRow then
-		            mData = mData + ","
-		          else
-		            mData = mData + ";"
-		          end if
-		          output.WriteLine( DefineEncoding(mData, Encodings.UTF8) )
-		          
-		          
+		          WriteStatement(output, insertSQL + ")")
+		          dataRows.MoveToNextRow
 		        Wend
-		        
-		        output.WriteLine("UNLOCK TABLES;")
-		        
-		      end if
-		      
+		      End If
+
 		      processedTables = processedTables + 1
-		      PostProgress(pThread, pProgressStart + ((processedTables * progressSpan) / totalTables), kBackup(App.lang) + " : " + tableName)
-		      rc.MoveToNextRow
-		    wend
-		    
+		      PostProgress(pThread, pProgressStart + ((processedTables * progressSpan) / totalTables), kBackup(App.Lang) + " : " + tableName)
+		    Next
+
+		    WriteStatement(output, "SET FOREIGN_KEY_CHECKS = 1")
+		    output.WriteLine(kBackupCompleteMarker)
 		    output.Close
-		    PostProgress(pThread, pProgressEnd, kBackupFait(App.lang))
-		    Return fi
-		  Catch e As IOException
-		    PostProgress(pThread, pProgressStart, kBackupFailed(App.lang))
-		    
-		    Return nil
+		    output = Nil
+
+		    mDatabase.ExecuteSQL("COMMIT")
+		    transactionStarted = False
+		    PostProgress(pThread, pProgressEnd, kBackupFait(App.Lang))
+		    Return backupFile
+		  Catch error As RuntimeException
+		    If output <> Nil Then
+		      Try
+		        output.Close
+		      Catch
+		      End Try
+		    End If
+		    If transactionStarted Then
+		      Try
+		        mDatabase.ExecuteSQL("ROLLBACK")
+		      Catch
+		      End Try
+		    End If
+		    If backupFile.Exists Then
+		      Try
+		        backupFile.Remove
+		      Catch
+		      End Try
+		    End If
+		    PostProgress(pThread, pProgressStart, kBackupFailed(App.Lang))
+		    Return Nil
 		  End Try
-		  
 		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Shared Function QuoteIdentifier(pName As String) As String
+		  Return "`" + pName.ReplaceAll("`", "``") + "`"
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Shared Function RestoreDump(pBackupFile As FolderItem, pDatabase As Database, ByRef pDetails As String) As Boolean
+		  pDetails = ""
+		  If pBackupFile Is Nil Or Not pBackupFile.Exists Then
+		    pDetails = "Backup file is missing."
+		    Return False
+		  End If
+		  If pDatabase Is Nil Or Not (pDatabase IsA MySQLCommunityServer) Then
+		    pDetails = "A connected MySQL/MariaDB database is required."
+		    Return False
+		  End If
+
+		  Dim input As TextInputStream
+		  Dim headerFound As Boolean
+		  Dim completeMarkerFound As Boolean
+		  Dim statement As String
+		  Dim statementCount As Integer
+
+		  Try
+		    input = TextInputStream.Open(pBackupFile)
+		    input.Encoding = Encodings.UTF8
+
+		    While Not input.EndOfFile
+		      Dim line As String = input.ReadLine
+		      Dim trimmedLine As String = line.Trim
+
+		      If trimmedLine = kBackupVersionHeader Then
+		        headerFound = True
+		      ElseIf trimmedLine = kStatementEndMarker Then
+		        If Not headerFound Then
+		          pDetails = "Backup statement found before the version header."
+		          input.Close
+		          Return False
+		        End If
+		        If statement.Trim <> "" Then
+		          pDatabase.ExecuteSQL(statement)
+		          statementCount = statementCount + 1
+		        End If
+		        statement = ""
+		      ElseIf trimmedLine = kBackupCompleteMarker Then
+		        completeMarkerFound = True
+		      ElseIf headerFound And Not trimmedLine.BeginsWith("--") Then
+		        statement = statement + line + EndOfLine.UNIX
+		      End If
+		    Wend
+		    input.Close
+		    input = Nil
+
+		    If Not headerFound Then
+		      pDetails = "Unsupported backup format: version header missing."
+		      Return False
+		    End If
+		    If statement.Trim <> "" Then
+		      pDetails = "Incomplete backup: unterminated SQL statement."
+		      Return False
+		    End If
+		    If Not completeMarkerFound Then
+		      pDetails = "Incomplete backup: completion marker missing."
+		      Return False
+		    End If
+
+		    pDetails = statementCount.ToString + " statements restored."
+		    Return True
+		  Catch error As RuntimeException
+		    If input <> Nil Then
+		      Try
+		        input.Close
+		      Catch
+		      End Try
+		    End If
+		    Try
+		      pDatabase.ExecuteSQL("SET FOREIGN_KEY_CHECKS = 1")
+		    Catch
+		    End Try
+		    pDetails = "Restore failed after " + statementCount.ToString + " statements: " + error.Message
+		    Return False
+		  End Try
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Shared Function SQLValue(pColumn As DatabaseColumn, pDataType As String) As String
+		  If pColumn.Value.IsNull Then Return "NULL"
+
+		  Dim normalizedType As String = pDataType.Trim.Lowercase
+		  Select Case normalizedType
+		  Case "binary", "varbinary", "tinyblob", "blob", "mediumblob", "longblob", "bit"
+		    Return "X'" + EncodeHex(pColumn.NativeValue) + "'"
+		  Case "tinyint", "smallint", "mediumint", "int", "integer", "bigint", "decimal", "numeric", "float", "double", "real", "year"
+		    Return pColumn.StringValue
+		  End Select
+
+		  Dim escapedValue As String = pColumn.StringValue
+		  escapedValue = escapedValue.ReplaceAll(Chr(92), Chr(92) + Chr(92))
+		  escapedValue = escapedValue.ReplaceAll(Chr(0), Chr(92) + "0")
+		  escapedValue = escapedValue.ReplaceAll(Chr(10), Chr(92) + "n")
+		  escapedValue = escapedValue.ReplaceAll(Chr(13), Chr(92) + "r")
+		  escapedValue = escapedValue.ReplaceAll(Chr(9), Chr(92) + "t")
+		  escapedValue = escapedValue.ReplaceAll(Chr(26), Chr(92) + "Z")
+		  escapedValue = escapedValue.ReplaceAll("'", "''")
+		  Return "'" + escapedValue + "'"
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h21
+		Private Shared Sub WriteStatement(pOutput As TextOutputStream, pSQL As String)
+		  Dim statement As String = pSQL.Trim
+		  If Not statement.EndsWith(";") Then statement = statement + ";"
+		  pOutput.WriteLine(statement.ConvertEncoding(Encodings.UTF8))
+		  pOutput.WriteLine(kStatementEndMarker)
+		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h21
 		Private Sub Cancel()
 		  mCancel = True
-		  
+
 		End Sub
 	#tag EndMethod
 
@@ -483,6 +541,16 @@ Protected Class MySQL_Backup
 	#tag Property, Flags = &h21
 		Private mWorker As Thread
 	#tag EndProperty
+
+
+	#tag Constant, Name = kBackupCompleteMarker, Type = String, Dynamic = False, Default = \"-- KANJO_BACKUP_COMPLETE", Scope = Public
+	#tag EndConstant
+
+	#tag Constant, Name = kBackupVersionHeader, Type = String, Dynamic = False, Default = \"-- KANJO_BACKUP_VERSION=2", Scope = Public
+	#tag EndConstant
+
+	#tag Constant, Name = kStatementEndMarker, Type = String, Dynamic = False, Default = \"-- KANJO_STATEMENT_END", Scope = Public
+	#tag EndConstant
 
 
 	#tag ViewBehavior
