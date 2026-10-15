@@ -25,7 +25,7 @@ Begin DesktopWindow WindowMainBackupMySQL
    Type            =   0
    Visible         =   True
    Width           =   1014
-   Begin DesktopListBox Listbox1
+   Begin BHSelectionListBox Listbox1
       AllowAutoDeactivate=   True
       AllowAutoHideScrollbars=   True
       AllowExpandableRows=   False
@@ -78,7 +78,7 @@ Begin DesktopWindow WindowMainBackupMySQL
       _ScrollOffset   =   0
       _ScrollWidth    =   -1
    End
-   Begin DesktopListBox Listbox2
+   Begin BHSelectionListBox Listbox2
       AllowAutoDeactivate=   True
       AllowAutoHideScrollbars=   True
       AllowExpandableRows=   False
@@ -131,7 +131,7 @@ Begin DesktopWindow WindowMainBackupMySQL
       _ScrollOffset   =   0
       _ScrollWidth    =   -1
    End
-   Begin DesktopListBox Listbox3
+   Begin BHSelectionListBox Listbox3
       AllowAutoDeactivate=   True
       AllowAutoHideScrollbars=   True
       AllowExpandableRows=   False

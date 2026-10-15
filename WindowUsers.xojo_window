@@ -25,7 +25,7 @@ Begin DesktopWindow WindowUsers
    Type            =   0
    Visible         =   True
    Width           =   600
-   Begin DesktopListBox Listbox1
+   Begin BHSelectionListBox Listbox1
       AllowAutoDeactivate=   True
       AllowAutoHideScrollbars=   True
       AllowExpandableRows=   False
